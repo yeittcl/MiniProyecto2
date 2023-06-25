@@ -5,47 +5,248 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <fstream>
+#include <sstream>
+#include <ctime>
+#include <chrono> 
 
 using namespace std;
 
-int main()
+double convert_rounded(double number)
 {
-    Quadtree quadtree(100.0, 100.0);
+    number = (number * 1000);
+    return number/1000;
+}
 
-    quadtree.insert(Point(10.0, 10.0, 1000));
-    quadtree.insert(Point(10.0, 10.0, 1000));
-    quadtree.insert(Point(20.0, 20.0, 2000));
-    quadtree.insert(Point(30.0, 30.0, 3000));
-    quadtree.insert(Point(40.0, 40.0, 4000));
-    quadtree.insert(Point(50.0, 50.0, 5000));
-    quadtree.insert(Point(60.0, 60.0, 6000));
-    quadtree.insert(Point(70.0, 70.0, 7000));
-    quadtree.insert(Point(80.0, 80.0, 8000));
-    quadtree.insert(Point(90.0, 90.0, 9000));
-    quadtree.insert(Point(15.0, 25.0, 1500));
-    quadtree.insert(Point(35.0, 45.0, 3500));
-    quadtree.insert(Point(55.0, 65.0, 5500));
-    quadtree.insert(Point(75.0, 85.0, 7500));
-    quadtree.insert(Point(95.0, 95.0, 9500));
-    quadtree.insert(Point(22.0, 32.0, 2200));
-    quadtree.insert(Point(42.0, 52.0, 4200));
+void Prueba_insert(){
+    vector<float> tiempos;
 
-    float searchX = 20.0;
-    float searchY = 20.0;
-    float searchWidth = 40.0;
-    float searchHeight = 40.0;
 
-    int regioncount = quadtree.countRegion(searchX, searchY, searchWidth, searchHeight);
-    cout<< "puntos en region: "<<regioncount<<endl;
-    int regionpop = quadtree.agreggateRegion(searchX, searchY, searchWidth, searchHeight);
-    cout<< "population en region: "<<regionpop<<endl;
-    cout<< "total points: "<<quadtree.totalPoints()<<endl;
-    cout<< "total node: "<<quadtree.totalNodes()<<endl;
-    vector<Point> allpoints = quadtree.list();
-    for(const Point& point: allpoints)
-    {
-        cout<<"point: "<<point.x<<", "<<point.y<<endl;
+    srand(time(NULL));
+    clock_t time_insert;
+    clock_t time_insert2;
+
+    time_insert = clock();
+
+    for(int j=0; j<1; j++){
+        Quadtree quadtree(360.000, 180.000);
+
+        ifstream inputFile;
+        inputFile.open("worldcitiespop_fixed.csv");
+        string line = "";
+        char delimitador = ';';
+        int i = 0;
+
+        getline(inputFile, line);
+
+        time_insert = clock();
+
+        while(getline(inputFile, line)){
+            stringstream stream(line);
+            string country, city, accentCity, region, strpopulation, strlatitude, strlongitude, geopoint, geolatitude, geolongitude;
+            double latitude, longitude;
+            int population;
+            getline(stream, country, delimitador);
+            getline(stream, city, delimitador);
+            getline(stream, accentCity, delimitador);
+            getline(stream, region, delimitador);
+            getline(stream, strpopulation, delimitador);
+            population = atoi(strpopulation.c_str());
+            getline(stream, strlatitude, delimitador);
+            getline(stream, strlongitude, delimitador);
+            getline(stream, geopoint, delimitador);
+            stringstream geostream(geopoint);
+            getline(geostream, geolatitude, ',');
+            getline(geostream, geolongitude, ',');
+            latitude = convert_rounded(atof(geolatitude.c_str()));
+            latitude+=90.000;
+            longitude = convert_rounded(atof(geolongitude.c_str()));
+            longitude+=180.000;
+            quadtree.insert(Point(longitude, latitude, population));
+            i++;
+            if(i==100000 || i==200000 || i==400000 || i==800000 || i==1600000){
+                time_insert2 = clock() - time_insert;
+                tiempos.push_back(time_insert2);
+            }
+        }
+
+        time_insert2 = clock() - time_insert;
+        tiempos.push_back(time_insert2);
+
+        while(!tiempos.empty()){
+            std::cout<<tiempos.at(0)<<endl;
+            tiempos.erase(tiempos.begin()+ 0);
+        }
+            std::cout<<quadtree.totalPoints()<<endl;
+            std::cout<<quadtree.totalNodes()<<endl;
+            
+            inputFile.close();
     }
+}
+
+void Prueba_Region(){
+    Quadtree quadtree(360.000, 180.000);
+
+    ifstream inputFile;
+    inputFile.open("worldcitiespop_fixed.csv");
+    string line = "";
+    char delimitador = ';';
+    int i = 0;
+
+    getline(inputFile, line);
+
+    while(getline(inputFile, line)){
+        stringstream stream(line);
+        string country, city, accentCity, region, strpopulation, strlatitude, strlongitude, geopoint, geolatitude, geolongitude;
+        double latitude, longitude;
+        int population;
+        getline(stream, country, delimitador);
+        getline(stream, city, delimitador);
+        getline(stream, accentCity, delimitador);
+        getline(stream, region, delimitador);
+        getline(stream, strpopulation, delimitador);
+        population = atoi(strpopulation.c_str());
+        getline(stream, strlatitude, delimitador);
+        getline(stream, strlongitude, delimitador);
+        getline(stream, geopoint, delimitador);
+        stringstream geostream(geopoint);
+        getline(geostream, geolatitude, ',');
+        getline(geostream, geolongitude, ',');
+        latitude = convert_rounded(atof(geolatitude.c_str()));
+        latitude+=90.000;
+        longitude = convert_rounded(atof(geolongitude.c_str()));
+        longitude+=180.000;
+        quadtree.insert(Point(longitude, latitude, population));
+        i++;
+    }
+  
+    srand(time(NULL));
+
+    clock_t time_insert;
+
+    std::cout<<"CountRegion"<<endl;
+    for(int i=0; i<20; i++){
+        time_insert = clock();
+
+        int x1 = quadtree.countRegion(0,0,2,2);
+
+        time_insert = clock() - time_insert;
+        
+        std::cout<<"[2x2]: "<<time_insert<<endl;
+    }
+    std::cout<<endl;
+
+    for(int i=0; i<20; i++){
+        time_insert = clock();
+
+        int x1 = quadtree.countRegion(0,0,50,42);
+
+        time_insert = clock() - time_insert;
+        
+        std::cout<<"[50x42]: "<<time_insert<<endl;
+    }
+    std::cout<<endl;
+
+    for(int i=0; i<20; i++){
+        time_insert = clock();
+
+        int x1 = quadtree.countRegion(0,0,80,120);
+
+        time_insert = clock() - time_insert;
+        
+        std::cout<<"[80x120]: "<<time_insert<<endl;
+    }
+    std::cout<<endl;
+
+    for(int i=0; i<20; i++){
+        time_insert = clock();
+
+        int x1 = quadtree.countRegion(0,0,200,180);
+
+        time_insert = clock() - time_insert;
+        
+        std::cout<<"[200x180]: "<<time_insert<<endl;
+    }
+
+    std::cout<<endl;
+    for(int i=0; i<20; i++){
+        time_insert = clock();
+
+        int x1 = quadtree.countRegion(0,0,360,180);
+
+        time_insert = clock() - time_insert;
+        
+        std::cout<<"[360x180]: "<<time_insert<<endl;
+    }
+    std::cout<<endl;
+
+    std::cout<<"AggregateRegion"<<endl;
+    for(int i=0; i<20; i++){
+        time_insert = clock();
+
+        int x1 = quadtree.agreggateRegion(0,0,2,2);
+
+        time_insert = clock() - time_insert;
+        
+        std::cout<<"[2x2]: "<<time_insert<<endl;
+    }
+    std::cout<<endl;
+
+    for(int i=0; i<20; i++){
+        time_insert = clock();
+
+        int x1 = quadtree.agreggateRegion(0,0,50,42);
+
+        time_insert = clock() - time_insert;
+        
+        std::cout<<"[50x42]: "<<time_insert<<endl;
+    }
+    std::cout<<endl;
+
+    for(int i=0; i<20; i++){
+        time_insert = clock();
+
+        int x1 = quadtree.agreggateRegion(0,0,80,120);
+
+        time_insert = clock() - time_insert;
+        
+        std::cout<<"[80x120]: "<<time_insert<<endl;
+    }
+    std::cout<<endl;
+
+    for(int i=0; i<20; i++){
+        time_insert = clock();
+
+        int x1 = quadtree.agreggateRegion(0,0,200,180);
+
+        time_insert = clock() - time_insert;
+        
+        std::cout<<"[200x180]: "<<time_insert<<endl;
+    }
+
+    std::cout<<endl;
+    for(int i=0; i<20; i++){
+        time_insert = clock();
+
+        int x1 = quadtree.agreggateRegion(0,0,360,180);
+
+        time_insert = clock() - time_insert;
+        
+        std::cout<<"[360x180]: "<<time_insert<<endl;
+    }
+    std::cout<<endl;
+    
+                
+    inputFile.close();
+}
+
+
+int main(){
+    
+    /*Prueba_insert(); */
+    Prueba_Region();
     
     return 0;
 }
+
+// g++ main.cpp quadtree.cpp point.cpp node.cpp -o main.exe // 
